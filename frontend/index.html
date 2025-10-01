@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OTP Verification System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .success-checkmark {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto;
+            border-radius: 50%;
+            display: block;
+            stroke-width: 2;
+            stroke: #4bb71b;
+            stroke-miterlimit: 10;
+            box-shadow: inset 0px 0px 0px #4bb71b;
+            animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both;
+        }
+        
+        .checkmark-circle {
+            stroke-dasharray: 166;
+            stroke-dashoffset: 166;
+            stroke-width: 2;
+            stroke-miterlimit: 10;
+            stroke: #4bb71b;
+            fill: none;
+            animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+        }
+        
+        .checkmark-check {
+            transform-origin: 50% 50%;
+            stroke-dasharray: 48;
+            stroke-dashoffset: 48;
+            animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+        }
+        
+        @keyframes stroke {
+            100% { stroke-dashoffset: 0; }
+        }
+        
+        @keyframes scale {
+            0%, 100% { transform: none; }
+            50% { transform: scale3d(1.1, 1.1, 1); }
+        }
+        
+        @keyframes fill {
+            100% { box-shadow: inset 0px 0px 0px 30px #4bb71b; }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen flex items-center justify-center p-4">
+    <div class="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 text-white text-center">
+            <h1 class="text-2xl font-bold">OTP Verification</h1>
+            <p class="text-blue-100 mt-2">Secure your account with one-time password</p>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="p-6">
+            <!-- Step 1: Email Input -->
+            <div id="step1" class="fade-in">
+                <div class="text-center mb-6">
+                    <i class="fas fa-envelope text-4xl text-blue-500 mb-4"></i>
+                    <h2 class="text-xl font-semibold text-gray-800">Enter Your Email</h2>
+                    <p class="text-gray-600 mt-2">We'll send a verification code to your email</p>
+                </div>
+                
+                <form id="emailForm">
+                    <div class="mb-4">
+                        <label for="email" class="block text-gray-700 text-sm font-medium mb-2">Email Address</label>
+                        <div class="relative">
+                            <input 
+                                type="email" 
+                                id="email" 
+                                name="email"
+                                required
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                                placeholder="your@email.com"
+                            >
+                            <i class="fas fa-envelope absolute right-3 top-3.5 text-gray-400"></i>
+                        </div>
+                    </div>
+                    
+                    <button 
+                        type="submit"
+                        id="sendOtpBtn"
+                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition duration-300 flex items-center justify-center"
+                    >
+                        <span id="sendOtpText">Send OTP</span>
+                        <i id="sendOtpSpinner" class="fas fa-spinner fa-spin ml-2 hidden"></i>
+                    </button>
+                </form>
+            </div>
+            
+            <!-- Step 2: OTP Verification -->
+            <div id="step2" class="hidden fade-in">
+                <div class="text-center mb-6">
+                    <i class="fas fa-shield-alt text-4xl text-blue-500 mb-4"></i>
+                    <h2 class="text-xl font-semibold text-gray-800">Enter Verification Code</h2>
+                    <p class="text-gray-600 mt-2">We've sent a 6-digit code to <span id="userEmail" class="font-medium"></span></p>
+                </div>
+                
+                <form id="otpForm">
+                    <div class="mb-4">
+                        <label for="otp" class="block text-gray-700 text-sm font-medium mb-2">Verification Code</label>
+                        <div class="relative">
+                            <input 
+                                type="text" 
+                                id="otp" 
+                                name="otp"
+                                maxlength="6"
+                                required
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-center text-xl tracking-widest"
+                                placeholder="000000"
+                            >
+                            <i class="fas fa-key absolute right-3 top-3.5 text-gray-400"></i>
+                        </div>
+                        <p class="text-sm text-gray-500 mt-2">Enter the 6-digit code sent to your email</p>
+                    </div>
+                    
+                    <div class="flex space-x-3">
+                        <button 
+                            type="button"
+                            id="backBtn"
+                            class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-3 px-4 rounded-lg transition duration-300"
+                        >
+                            Back
+                        </button>
+                        <button 
+                            type="submit"
+                            id="verifyOtpBtn"
+                            class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition duration-300 flex items-center justify-center"
+                        >
+                            <span id="verifyOtpText">Verify OTP</span>
+                            <i id="verifyOtpSpinner" class="fas fa-spinner fa-spin ml-2 hidden"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <button 
+                            type="button"
+                            id="resendOtpBtn"
+                            class="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                        >
+                            Didn't receive code? Resend
+                        </button>
+                        <p id="resendTimer" class="text-sm text-gray-500 mt-1 hidden">Resend available in <span id="countdown">60</span> seconds</p>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Step 3: Success Message -->
+            <div id="step3" class="hidden fade-in">
+                <div class="text-center py-6">
+                    <svg class="success-checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                        <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+                        <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                    </svg>
+                    <h2 class="text-2xl font-bold text-gray-800 mt-4">Verification Successful!</h2>
+                    <p class="text-gray-600 mt-2">Your email has been verified successfully.</p>
+                    
+                    <button 
+                        id="resetBtn"
+                        class="mt-6 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition duration-300"
+                    >
+                        Verify Another Email
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Alert Messages -->
+            <div id="alert" class="mt-4 hidden">
+                <div class="p-4 rounded-lg" id="alertContent">
+                    <div class="flex items-center">
+                        <i id="alertIcon" class="fas fa-info-circle mr-3"></i>
+                        <span id="alertMessage"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="bg-gray-50 p-4 text-center text-gray-500 text-sm">
+            <p>Secure OTP Verification System</p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
