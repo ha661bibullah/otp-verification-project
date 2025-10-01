@@ -96,10 +96,19 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
         
         .btn:hover {
             background: #3367d6;
+        }
+        
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
         }
         
         .btn-secondary {
@@ -152,16 +161,19 @@
             border: 1px solid #aecbfa;
         }
         
-        .otp-display {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 15px;
-            text-align: center;
-            font-family: monospace;
-            font-size: 18px;
-            letter-spacing: 5px;
-            border: 1px dashed #dadce0;
+        .loader {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ffffff;
+            border-bottom-color: transparent;
+            border-radius: 50%;
+            display: inline-block;
+            animation: rotation 1s linear infinite;
+        }
+        
+        @keyframes rotation {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
         
         .footer {
@@ -187,7 +199,9 @@
                     <label for="email">আপনার জিমেইল ঠিকানা</label>
                     <input type="email" id="email" placeholder="example@gmail.com">
                 </div>
-                <button class="btn" onclick="sendOTP()">OTP পাঠান</button>
+                <button class="btn" onclick="sendOTP()" id="sendOtpBtn">
+                    <span>OTP পাঠান</span>
+                </button>
             </div>
             
             <!-- Step 2: OTP Verification -->
@@ -199,14 +213,11 @@
                     <label for="otp">6-অঙ্কের OTP কোড</label>
                     <input type="text" id="otp" placeholder="123456" maxlength="6">
                 </div>
-                <button class="btn" onclick="verifyOTP()">যাচাই করুন</button>
+                <button class="btn" onclick="verifyOTP()" id="verifyOtpBtn">
+                    <span>যাচাই করুন</span>
+                </button>
                 <div class="resend">
                     <a href="#" onclick="resendOTP()">OTP আবার পাঠান</a>
-                </div>
-                
-                <!-- Demo OTP Display -->
-                <div class="otp-display">
-                    ডেমো OTP: <span id="demo-otp">000000</span>
                 </div>
             </div>
             
@@ -215,7 +226,9 @@
                 <div class="message success">
                     ✅ সফলভাবে লগইন হয়েছে!
                 </div>
-                <button class="btn btn-secondary" onclick="resetForm()">আবার লগইন করুন</button>
+                <button class="btn btn-secondary" onclick="resetForm()">
+                    <span>আবার লগইন করুন</span>
+                </button>
             </div>
             
             <div id="message" class="message"></div>
@@ -227,14 +240,15 @@
     </div>
 
     <script>
-        // গ্লোবাল ভেরিয়েবল
-        let generatedOTP = "";
-        let userEmail = "";
+        const API_BASE = 'http://localhost:3000/api';
+        let userEmail = '';
         
         // OTP পাঠানোর ফাংশন
-        function sendOTP() {
+        async function sendOTP() {
             const emailInput = document.getElementById('email');
             const email = emailInput.value.trim();
+            const btn = document.getElementById('sendOtpBtn');
+            const btnText = btn.querySelector('span');
             
             // ইমেইল ভ্যালিডেশন
             if (!email) {
@@ -251,25 +265,49 @@
             
             userEmail = email;
             
-            // 6-digit OTP জেনারেট করা
-            generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
-            document.getElementById('demo-otp').textContent = generatedOTP;
+            // লোডিং স্টেট
+            btn.disabled = true;
+            btnText.innerHTML = '<div class="loader"></div> OTP পাঠানো হচ্ছে...';
             
-            // স্টেপ পরিবর্তন
-            document.getElementById('step1').classList.remove('active');
-            document.getElementById('step2').classList.add('active');
-            
-            showMessage(`OTP কোড ${email} ঠিকানায় পাঠানো হয়েছে`, 'success');
-            
-            // OTP ফিল্ডে ফোকাস
-            setTimeout(() => {
-                document.getElementById('otp').focus();
-            }, 100);
+            try {
+                const response = await fetch(`${API_BASE}/send-otp`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // স্টেপ পরিবর্তন
+                    document.getElementById('step1').classList.remove('active');
+                    document.getElementById('step2').classList.add('active');
+                    showMessage(`OTP কোড ${email} ঠিকানায় পাঠানো হয়েছে`, 'success');
+                    
+                    // OTP ফিল্ডে ফোকাস
+                    setTimeout(() => {
+                        document.getElementById('otp').focus();
+                    }, 100);
+                } else {
+                    showMessage(data.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showMessage('সার্ভারে সমস্যা হয়েছে', 'error');
+            } finally {
+                // বাটন রিসেট
+                btn.disabled = false;
+                btnText.textContent = 'OTP পাঠান';
+            }
         }
         
         // OTP যাচাই করার ফাংশন
-        function verifyOTP() {
+        async function verifyOTP() {
             const enteredOTP = document.getElementById('otp').value.trim();
+            const btn = document.getElementById('verifyOtpBtn');
+            const btnText = btn.querySelector('span');
             
             if (!enteredOTP) {
                 showMessage('দয়া করে OTP কোড লিখুন', 'error');
@@ -281,25 +319,45 @@
                 return;
             }
             
-            if (enteredOTP === generatedOTP) {
-                document.getElementById('step2').classList.remove('active');
-                document.getElementById('step3').classList.add('active');
-                showMessage('', '');
-            } else {
-                showMessage('ভুল OTP কোড, আবার চেষ্টা করুন', 'error');
+            // লোডিং স্টেট
+            btn.disabled = true;
+            btnText.innerHTML = '<div class="loader"></div> যাচাই করা হচ্ছে...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/verify-otp`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        email: userEmail, 
+                        otp: enteredOTP 
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('step2').classList.remove('active');
+                    document.getElementById('step3').classList.add('active');
+                    showMessage('', '');
+                } else {
+                    showMessage(data.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showMessage('সার্ভারে সমস্যা হয়েছে', 'error');
+            } finally {
+                // বাটন রিসেট
+                btn.disabled = false;
+                btnText.textContent = 'যাচাই করুন';
             }
         }
         
         // OTP আবার পাঠানোর ফাংশন
         function resendOTP() {
-            generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
-            document.getElementById('demo-otp').textContent = generatedOTP;
             document.getElementById('otp').value = '';
-            
-            showMessage(`নতুন OTP কোড ${userEmail} ঠিকানায় পাঠানো হয়েছে`, 'success');
-            
-            // OTP ফিল্ডে ফোকাস
-            document.getElementById('otp').focus();
+            sendOTP();
         }
         
         // ফর্ম রিসেট করার ফাংশন
@@ -308,8 +366,7 @@
             document.getElementById('step1').classList.add('active');
             document.getElementById('email').value = '';
             document.getElementById('otp').value = '';
-            generatedOTP = "";
-            userEmail = "";
+            userEmail = '';
             showMessage('', '');
             
             // ইমেইল ফিল্ডে ফোকাস
@@ -349,11 +406,6 @@
                 verifyOTP();
             }
         });
-        
-        // পেজ লোড হলে ইমেইল ফিল্ডে ফোকাস
-        window.onload = function() {
-            document.getElementById('email').focus();
-        };
     </script>
 </body>
 </html>
