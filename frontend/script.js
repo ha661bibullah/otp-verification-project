@@ -1,30 +1,7 @@
 // Configuration - Update this with your Render backend URL
 const API_BASE_URL = 'https://otp-verification-project.onrender.com';
 
-// DOM Elements
-const step1 = document.getElementById('step1');
-const step2 = document.getElementById('step2');
-const step3 = document.getElementById('step3');
-const emailForm = document.getElementById('emailForm');
-const otpForm = document.getElementById('otpForm');
-const emailInput = document.getElementById('email');
-const otpInput = document.getElementById('otp');
-const userEmailSpan = document.getElementById('userEmail');
-const sendOtpBtn = document.getElementById('sendOtpBtn');
-const sendOtpText = document.getElementById('sendOtpText');
-const sendOtpSpinner = document.getElementById('sendOtpSpinner');
-const verifyOtpBtn = document.getElementById('verifyOtpBtn');
-const verifyOtpText = document.getElementById('verifyOtpText');
-const verifyOtpSpinner = document.getElementById('verifyOtpSpinner');
-const backBtn = document.getElementById('backBtn');
-const resendOtpBtn = document.getElementById('resendOtpBtn');
-const resendTimer = document.getElementById('resendTimer');
-const countdownSpan = document.getElementById('countdown');
-const resetBtn = document.getElementById('resetBtn');
-const alertDiv = document.getElementById('alert');
-const alertMessage = document.getElementById('alertMessage');
-const alertIcon = document.getElementById('alertIcon');
-const alertContent = document.getElementById('alertContent');
+// DOM Elements - same as before
 
 // State
 let currentEmail = '';
@@ -35,7 +12,6 @@ let countdownInterval;
 function showAlert(message, type = 'info') {
     alertMessage.textContent = message;
     
-    // Set alert style based on type
     const styles = {
         success: 'bg-green-100 text-green-800 border border-green-200',
         error: 'bg-red-100 text-red-800 border border-red-200',
@@ -55,7 +31,6 @@ function showAlert(message, type = 'info') {
     
     alertDiv.classList.remove('hidden');
     
-    // Auto hide after 5 seconds for non-error messages
     if (type !== 'error') {
         setTimeout(() => {
             hideAlert();
@@ -68,12 +43,10 @@ function hideAlert() {
 }
 
 function showStep(stepNumber) {
-    // Hide all steps
     step1.classList.add('hidden');
     step2.classList.add('hidden');
     step3.classList.add('hidden');
     
-    // Show the selected step
     if (stepNumber === 1) {
         step1.classList.remove('hidden');
     } else if (stepNumber === 2) {
@@ -82,7 +55,6 @@ function showStep(stepNumber) {
         step3.classList.remove('hidden');
     }
     
-    // Hide alert when changing steps
     hideAlert();
 }
 
@@ -117,7 +89,36 @@ function startResendTimer() {
     }, 1000);
 }
 
-// Event Listeners
+// IMPROVED: Better error handling for API calls
+async function makeApiCall(url, options) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    
+    try {
+        const response = await fetch(url, {
+            ...options,
+            signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        return await response.json();
+    } catch (error) {
+        clearTimeout(timeoutId);
+        
+        if (error.name === 'AbortError') {
+            throw new Error('Request timeout. Please check your internet connection.');
+        }
+        
+        throw error;
+    }
+}
+
+// Event Listeners - IMPROVED VERSION
 emailForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -128,7 +129,6 @@ emailForm.addEventListener('submit', async (e) => {
         return;
     }
     
-    // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
         showAlert('Please enter a valid email address', 'error');
@@ -139,15 +139,13 @@ emailForm.addEventListener('submit', async (e) => {
     setLoading(sendOtpBtn, sendOtpText, sendOtpSpinner, true);
     
     try {
-        const response = await fetch(`${API_BASE_URL}/api/send-otp`, {
+        const data = await makeApiCall(`${API_BASE_URL}/api/send-otp`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({ email }),
         });
-        
-        const data = await response.json();
         
         if (data.success) {
             userEmailSpan.textContent = email;
@@ -159,7 +157,14 @@ emailForm.addEventListener('submit', async (e) => {
         }
     } catch (error) {
         console.error('Error sending OTP:', error);
-        showAlert('Network error. Please check your connection and try again.', 'error');
+        
+        if (error.message.includes('timeout')) {
+            showAlert('Request timeout. Please check your connection and try again.', 'error');
+        } else if (error.message.includes('Failed to fetch')) {
+            showAlert('Network error. Please check your internet connection.', 'error');
+        } else {
+            showAlert('Failed to send OTP. Please try again.', 'error');
+        }
     } finally {
         setLoading(sendOtpBtn, sendOtpText, sendOtpSpinner, false);
     }
@@ -178,7 +183,7 @@ otpForm.addEventListener('submit', async (e) => {
     setLoading(verifyOtpBtn, verifyOtpText, verifyOtpSpinner, true);
     
     try {
-        const response = await fetch(`${API_BASE_URL}/api/verify-otp`, {
+        const data = await makeApiCall(`${API_BASE_URL}/api/verify-otp`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -188,8 +193,6 @@ otpForm.addEventListener('submit', async (e) => {
                 otp 
             }),
         });
-        
-        const data = await response.json();
         
         if (data.success) {
             showStep(3);
@@ -206,6 +209,7 @@ otpForm.addEventListener('submit', async (e) => {
     }
 });
 
+// Rest of the event listeners remain the same...
 backBtn.addEventListener('click', () => {
     showStep(1);
     clearInterval(countdownInterval);
@@ -219,15 +223,13 @@ resendOtpBtn.addEventListener('click', async () => {
     setLoading(sendOtpBtn, sendOtpText, sendOtpSpinner, true);
     
     try {
-        const response = await fetch(`${API_BASE_URL}/api/send-otp`, {
+        const data = await makeApiCall(`${API_BASE_URL}/api/send-otp`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({ email: currentEmail }),
         });
-        
-        const data = await response.json();
         
         if (data.success) {
             startResendTimer();
@@ -244,23 +246,28 @@ resendOtpBtn.addEventListener('click', async () => {
 });
 
 resetBtn.addEventListener('click', () => {
-    // Reset forms
     emailForm.reset();
     otpForm.reset();
-    
-    // Reset state
     currentEmail = '';
     clearInterval(countdownInterval);
-    
-    // Show first step
     showStep(1);
 });
 
-// Auto-tab between OTP digits (if using multiple inputs)
 otpInput.addEventListener('input', (e) => {
-    // Allow only numbers
     e.target.value = e.target.value.replace(/[^0-9]/g, '');
 });
 
 // Initialize
 showStep(1);
+
+// Test backend connection on load
+window.addEventListener('load', async () => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/health`);
+        if (response.ok) {
+            console.log('Backend connection successful');
+        }
+    } catch (error) {
+        console.log('Backend connection test failed:', error);
+    }
+});
