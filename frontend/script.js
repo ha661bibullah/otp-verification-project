@@ -1,5 +1,5 @@
 // Configuration - Update this with your Render backend URL
-const API_BASE_URL = 'https://otp-verification-project.onrender.com/health';
+const API_BASE_URL = 'https://otp-verification-project.onrender.com';
 
 // DOM Elements
 const step1 = document.getElementById('step1');
