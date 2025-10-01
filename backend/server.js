@@ -16,12 +16,15 @@ const PORT = process.env.PORT || 5000;
 
 // Nodemailer Transporter
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true, // SSL
   auth: {
-    user: process.env.EMAIL_USER, // আপনার Gmail
-    pass: process.env.EMAIL_PASS  // App Password
-  },
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  }
 });
+
 
 // OTP API
 app.post("/send-otp", async (req, res) => {
