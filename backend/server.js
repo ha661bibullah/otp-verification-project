@@ -8,35 +8,50 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
-// Nodemailer Transporter
+// OTP Storage (ডেমো জন্য, Production এ DB ব্যবহার করবেন)
+let otpStore = {};
+
+// Gmail Transporter
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
-    user: process.env.EMAIL_USER, // আপনার Gmail
-    pass: process.env.EMAIL_PASS  // App Password
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
   },
 });
 
-// OTP API
+// OTP পাঠানোর রুট
 app.post("/send-otp", async (req, res) => {
   const { email } = req.body;
-  const otp = Math.floor(100000 + Math.random() * 900000); // ৬ ডিজিট OTP
+  const otp = Math.floor(100000 + Math.random() * 900000);
+
+  otpStore[email] = otp; // ডেমো জন্য মেমোরিতে সংরক্ষণ
 
   try {
     await transporter.sendMail({
-      from: `"OTP Service" <${process.env.EMAIL_USER}>`,
+      from: `"OTP Login" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: "Your OTP Code",
       text: `Your OTP is: ${otp}`,
     });
 
-    res.json({ success: true, otp }); // প্র্যাকটিসে OTP DB/Redis এ রাখবেন
+    res.json({ success: true, message: "OTP sent successfully!" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, error: "Failed to send OTP" });
   }
+});
+
+// OTP যাচাই রুট
+app.post("/verify-otp", (req, res) => {
+  const { email, otp } = req.body;
+  if (otpStore[email] && otpStore[email] == otp) {
+    delete otpStore[email]; // OTP একবার ব্যবহারের পর মুছে দিন
+    return res.json({ success: true, message: "OTP Verified! Login Success ✅" });
+  }
+  res.json({ success: false, message: "❌ Invalid OTP" });
 });
 
 app.listen(PORT, () => {
