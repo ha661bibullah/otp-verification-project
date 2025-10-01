@@ -8,7 +8,7 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors({
-  origin: ['cerulean-basbousa-feb431.netlify.app', 'http://localhost:3000'],
+  origin: ['https://cerulean-basbousa-feb431.netlify.app', 'http://localhost:3000'],
   credentials: true
 }));
 app.use(express.json());
