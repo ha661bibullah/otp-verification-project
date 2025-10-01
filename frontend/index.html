@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gmail OTP লগইন সিস্টেম</title>
+    <title>Gmail OTP লগইন</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Arial', sans-serif;
+            font-family: Arial, sans-serif;
         }
         
         body {
@@ -23,32 +23,27 @@
         
         .container {
             background: white;
-            border-radius: 15px;
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
             width: 100%;
-            max-width: 450px;
+            max-width: 400px;
             overflow: hidden;
         }
         
         .header {
             background: #4285f4;
             color: white;
-            padding: 25px;
+            padding: 20px;
             text-align: center;
         }
         
         .header h1 {
-            font-size: 24px;
+            font-size: 22px;
             margin-bottom: 5px;
         }
         
-        .header p {
-            font-size: 14px;
-            opacity: 0.9;
-        }
-        
         .form-container {
-            padding: 30px;
+            padding: 25px;
         }
         
         .step {
@@ -60,7 +55,7 @@
         }
         
         .input-group {
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
         
         label {
@@ -72,34 +67,27 @@
         
         input {
             width: 100%;
-            padding: 14px;
+            padding: 12px;
             border: 1px solid #ddd;
-            border-radius: 8px;
+            border-radius: 6px;
             font-size: 16px;
-            transition: all 0.3s;
         }
         
         input:focus {
             outline: none;
             border-color: #4285f4;
-            box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);
         }
         
         .btn {
             background: #4285f4;
             color: white;
             border: none;
-            border-radius: 8px;
-            padding: 14px;
+            border-radius: 6px;
+            padding: 12px;
             width: 100%;
             font-size: 16px;
-            font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
+            margin-top: 10px;
         }
         
         .btn:hover {
@@ -111,36 +99,12 @@
             cursor: not-allowed;
         }
         
-        .btn-secondary {
-            background: #f1f3f4;
-            color: #333;
-        }
-        
-        .btn-secondary:hover {
-            background: #e8eaed;
-        }
-        
-        .resend {
-            text-align: center;
-            margin-top: 15px;
-        }
-        
-        .resend a {
-            color: #4285f4;
-            text-decoration: none;
-            font-weight: 500;
-        }
-        
-        .resend a:hover {
-            text-decoration: underline;
-        }
-        
         .message {
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 20px;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
             text-align: center;
-            font-weight: 500;
+            font-size: 14px;
         }
         
         .success {
@@ -161,116 +125,87 @@
             border: 1px solid #aecbfa;
         }
         
-        .loader {
-            width: 20px;
-            height: 20px;
-            border: 2px solid #ffffff;
-            border-bottom-color: transparent;
-            border-radius: 50%;
-            display: inline-block;
-            animation: rotation 1s linear infinite;
-        }
-        
-        @keyframes rotation {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .footer {
+        .otp-display {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 6px;
+            margin: 15px 0;
             text-align: center;
-            padding: 20px;
-            color: #5f6368;
-            font-size: 14px;
-            border-top: 1px solid #eee;
+            font-family: monospace;
+            font-size: 18px;
+            border: 1px dashed #ddd;
+        }
+        
+        .resend {
+            text-align: center;
+            margin: 15px 0;
+        }
+        
+        .resend a {
+            color: #4285f4;
+            text-decoration: none;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>Gmail OTP লগইন</h1>
-            <p>আপনার জিমেইলে পাঠানো OTP কোড দিয়ে লগইন করুন</p>
+            <h1>OTP লগইন সিস্টেম</h1>
+            <p>আপনার ইমেইলে OTP পাঠান</p>
         </div>
         
         <div class="form-container">
-            <!-- Step 1: Email Input -->
             <div id="step1" class="step active">
                 <div class="input-group">
-                    <label for="email">আপনার জিমেইল ঠিকানা</label>
+                    <label>ইমেইল ঠিকানা</label>
                     <input type="email" id="email" placeholder="example@gmail.com">
                 </div>
-                <button class="btn" onclick="sendOTP()" id="sendOtpBtn">
-                    <span>OTP পাঠান</span>
-                </button>
+                <button class="btn" onclick="sendOTP()" id="sendBtn">OTP পাঠান</button>
             </div>
             
-            <!-- Step 2: OTP Verification -->
             <div id="step2" class="step">
-                <div class="message info">
-                    OTP কোডটি আপনার ইমেইলে পাঠানো হয়েছে
-                </div>
+                <div class="message info">OTP আপনার ইমেইলে পাঠানো হয়েছে</div>
                 <div class="input-group">
-                    <label for="otp">6-অঙ্কের OTP কোড</label>
+                    <label>6-অঙ্কের OTP</label>
                     <input type="text" id="otp" placeholder="123456" maxlength="6">
                 </div>
-                <button class="btn" onclick="verifyOTP()" id="verifyOtpBtn">
-                    <span>যাচাই করুন</span>
-                </button>
+                <button class="btn" onclick="verifyOTP()" id="verifyBtn">যাচাই করুন</button>
                 <div class="resend">
                     <a href="#" onclick="resendOTP()">OTP আবার পাঠান</a>
                 </div>
+                <div class="otp-display">
+                    ডেমো OTP: <span id="demoOtp">---</span>
+                </div>
             </div>
             
-            <!-- Step 3: Success -->
             <div id="step3" class="step">
-                <div class="message success">
-                    ✅ সফলভাবে লগইন হয়েছে!
-                </div>
-                <button class="btn btn-secondary" onclick="resetForm()">
-                    <span>আবার লগইন করুন</span>
-                </button>
+                <div class="message success">✅ সফলভাবে লগইন হয়েছে!</div>
+                <button class="btn" onclick="resetForm()">আবার লগইন করুন</button>
             </div>
             
             <div id="message" class="message"></div>
         </div>
-        
-        <div class="footer">
-            Gmail OTP লগইন সিস্টেম | নিরাপদ লগইন
-        </div>
     </div>
 
     <script>
-        const API_BASE = 'http://localhost:3000/api';
+        const API_URL = 'http://localhost:3000/api';
         let userEmail = '';
-        
-        // OTP পাঠানোর ফাংশন
+
         async function sendOTP() {
-            const emailInput = document.getElementById('email');
-            const email = emailInput.value.trim();
-            const btn = document.getElementById('sendOtpBtn');
-            const btnText = btn.querySelector('span');
+            const email = document.getElementById('email').value.trim();
+            const btn = document.getElementById('sendBtn');
             
-            // ইমেইল ভ্যালিডেশন
             if (!email) {
-                showMessage('দয়া করে আপনার জিমেইল ঠিকানা লিখুন', 'error');
-                emailInput.focus();
-                return;
-            }
-            
-            if (!email.includes('@') || !email.includes('.')) {
-                showMessage('দয়া করে একটি বৈধ ইমেইল ঠিকানা লিখুন', 'error');
-                emailInput.focus();
+                showMessage('ইমেইল লিখুন', 'error');
                 return;
             }
             
             userEmail = email;
-            
-            // লোডিং স্টেট
             btn.disabled = true;
-            btnText.innerHTML = '<div class="loader"></div> OTP পাঠানো হচ্ছে...';
+            btn.textContent = 'পাঠানো হচ্ছে...';
             
             try {
-                const response = await fetch(`${API_BASE}/send-otp`, {
+                const response = await fetch(`${API_URL}/send-otp`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -281,57 +216,43 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    // স্টেপ পরিবর্তন
                     document.getElementById('step1').classList.remove('active');
                     document.getElementById('step2').classList.add('active');
-                    showMessage(`OTP কোড ${email} ঠিকানায় পাঠানো হয়েছে`, 'success');
-                    
-                    // OTP ফিল্ডে ফোকাস
-                    setTimeout(() => {
-                        document.getElementById('otp').focus();
-                    }, 100);
+                    document.getElementById('demoOtp').textContent = data.demo_otp;
+                    showMessage('OTP পাঠানো হয়েছে', 'success');
                 } else {
                     showMessage(data.message, 'error');
                 }
             } catch (error) {
+                showMessage('সার্ভারে সমস্যা', 'error');
                 console.error('Error:', error);
-                showMessage('সার্ভারে সমস্যা হয়েছে', 'error');
             } finally {
-                // বাটন রিসেট
                 btn.disabled = false;
-                btnText.textContent = 'OTP পাঠান';
+                btn.textContent = 'OTP পাঠান';
             }
         }
-        
-        // OTP যাচাই করার ফাংশন
+
         async function verifyOTP() {
-            const enteredOTP = document.getElementById('otp').value.trim();
-            const btn = document.getElementById('verifyOtpBtn');
-            const btnText = btn.querySelector('span');
+            const otp = document.getElementById('otp').value.trim();
+            const btn = document.getElementById('verifyBtn');
             
-            if (!enteredOTP) {
-                showMessage('দয়া করে OTP কোড লিখুন', 'error');
+            if (!otp || otp.length !== 6) {
+                showMessage('৬-অঙ্কের OTP লিখুন', 'error');
                 return;
             }
             
-            if (enteredOTP.length !== 6) {
-                showMessage('দয়া করে ৬-অঙ্কের OTP কোড লিখুন', 'error');
-                return;
-            }
-            
-            // লোডিং স্টেট
             btn.disabled = true;
-            btnText.innerHTML = '<div class="loader"></div> যাচাই করা হচ্ছে...';
+            btn.textContent = 'যাচাই করা হচ্ছে...';
             
             try {
-                const response = await fetch(`${API_BASE}/verify-otp`, {
+                const response = await fetch(`${API_URL}/verify-otp`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({ 
                         email: userEmail, 
-                        otp: enteredOTP 
+                        otp: otp 
                     })
                 });
                 
@@ -345,22 +266,18 @@
                     showMessage(data.message, 'error');
                 }
             } catch (error) {
-                console.error('Error:', error);
-                showMessage('সার্ভারে সমস্যা হয়েছে', 'error');
+                showMessage('সার্ভারে সমস্যা', 'error');
             } finally {
-                // বাটন রিসেট
                 btn.disabled = false;
-                btnText.textContent = 'যাচাই করুন';
+                btn.textContent = 'যাচাই করুন';
             }
         }
-        
-        // OTP আবার পাঠানোর ফাংশন
+
         function resendOTP() {
             document.getElementById('otp').value = '';
             sendOTP();
         }
-        
-        // ফর্ম রিসেট করার ফাংশন
+
         function resetForm() {
             document.getElementById('step3').classList.remove('active');
             document.getElementById('step1').classList.add('active');
@@ -368,43 +285,21 @@
             document.getElementById('otp').value = '';
             userEmail = '';
             showMessage('', '');
-            
-            // ইমেইল ফিল্ডে ফোকাস
-            setTimeout(() => {
-                document.getElementById('email').focus();
-            }, 100);
         }
-        
-        // মেসেজ দেখানোর ফাংশন
+
         function showMessage(msg, type) {
-            const messageDiv = document.getElementById('message');
-            messageDiv.textContent = msg;
-            messageDiv.className = 'message';
-            
-            if (type) {
-                messageDiv.classList.add(type);
-            }
-            
-            // অটো হাইড মেসেজ (যদি মেসেজ থাকে)
-            if (msg) {
-                setTimeout(() => {
-                    messageDiv.textContent = '';
-                    messageDiv.className = 'message';
-                }, 5000);
-            }
+            const msgDiv = document.getElementById('message');
+            msgDiv.textContent = msg;
+            msgDiv.className = 'message ' + (type || '');
         }
-        
-        // এন্টার কী প্রেস করলে OTP পাঠানো বা যাচাই করা
+
+        // Enter key support
         document.getElementById('email').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                sendOTP();
-            }
+            if (e.key === 'Enter') sendOTP();
         });
         
         document.getElementById('otp').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                verifyOTP();
-            }
+            if (e.key === 'Enter') verifyOTP();
         });
     </script>
 </body>
