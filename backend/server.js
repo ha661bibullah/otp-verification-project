@@ -8,7 +8,7 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors({
-  origin: ['https://cerulean-basbousa-feb431.netlify.app', 'http://localhost:3000'],
+  origin: ['https://cerulean-basbousa-feb431.netlify.app', 'http://localhost:3000', 'http://localhost:5500'],
   credentials: true
 }));
 app.use(express.json());
@@ -18,26 +18,49 @@ const otpStorage = new Map();
 
 // Configure nodemailer transporter with better error handling
 let transporter;
-try {
-  transporter = nodemailer.createTransporter({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS
+
+function initializeTransporter() {
+  try {
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      throw new Error('Email credentials not found in environment variables');
     }
-  });
-  
-  // Verify transporter configuration
-  transporter.verify(function(error, success) {
-    if (error) {
-      console.log('Transporter error:', error);
-    } else {
-      console.log('Server is ready to send emails');
-    }
-  });
-} catch (error) {
-  console.error('Failed to create transporter:', error);
+
+    transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+      }
+    });
+    
+    console.log('Transporter created successfully');
+  } catch (error) {
+    console.error('Failed to create transporter:', error.message);
+  }
 }
+
+// Initialize transporter on startup
+initializeTransporter();
+
+// Verify transporter configuration
+async function verifyTransporter() {
+  if (!transporter) {
+    console.log('Transporter not initialized');
+    return false;
+  }
+  
+  try {
+    await transporter.verify();
+    console.log('Server is ready to send emails');
+    return true;
+  } catch (error) {
+    console.log('Transporter verification failed:', error.message);
+    return false;
+  }
+}
+
+// Call verification on startup
+verifyTransporter();
 
 // Generate random 6-digit OTP
 function generateOTP() {
@@ -56,6 +79,15 @@ app.post('/api/send-otp', async (req, res) => {
       });
     }
 
+    // Check if transporter is ready
+    const isTransporterReady = await verifyTransporter();
+    if (!isTransporterReady) {
+      return res.status(500).json({
+        success: false,
+        message: 'Email service is temporarily unavailable'
+      });
+    }
+
     // Generate OTP
     const otp = generateOTP();
     
@@ -69,7 +101,10 @@ app.post('/api/send-otp', async (req, res) => {
 
     // Email options
     const mailOptions = {
-      from: process.env.EMAIL_USER,
+      from: {
+        name: 'OTP Verification System',
+        address: process.env.EMAIL_USER
+      },
       to: email,
       subject: 'Your OTP Verification Code',
       html: `
@@ -179,12 +214,16 @@ setInterval(() => {
   }
 }, 30 * 60 * 1000);
 
-// Health check endpoint
-app.get('/health', (req, res) => {
+// Health check endpoint with email service status
+app.get('/health', async (req, res) => {
+  const emailStatus = await verifyTransporter();
+  
   res.status(200).json({ 
     status: 'OK', 
     timestamp: new Date().toISOString(),
-    otpCount: otpStorage.size
+    otpCount: otpStorage.size,
+    emailService: emailStatus ? 'Operational' : 'Not Working',
+    environment: process.env.NODE_ENV || 'development'
   });
 });
 
@@ -197,6 +236,14 @@ app.get('/', (req, res) => {
       verifyOTP: 'POST /api/verify-otp',
       health: 'GET /health'
     }
+  });
+});
+
+// 404 handler
+app.use('*', (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: 'Route not found'
   });
 });
 
@@ -214,4 +261,5 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server is running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`Email user: ${process.env.EMAIL_USER ? 'Set' : 'Not set'}`);
+  console.log(`Health check: http://localhost:${PORT}/health`);
 });
