@@ -1,14 +1,190 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bn">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OTP Verification System</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>Gmail OTP লগইন সিস্টেম</title>
     <style>
-        .fade-in {
-            animation: fadeIn 0.5s ease-in;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 450px;
+            overflow: hidden;
+        }
+        
+        .header {
+            background: #4285f4;
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .form-container {
+            padding: 30px;
+        }
+        
+        .step {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .step.active {
+            display: block;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        input {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #4285f4;
+            box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);
+        }
+        
+        .btn {
+            background: #4285f4;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 14px;
+            width: 100%;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn:hover {
+            background: #3367d6;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-secondary {
+            background: #f1f3f4;
+            color: #333;
+        }
+        
+        .btn-secondary:hover {
+            background: #e8eaed;
+        }
+        
+        .resend {
+            text-align: center;
+            margin-top: 15px;
+        }
+        
+        .resend a {
+            color: #4285f4;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .resend a:hover {
+            text-decoration: underline;
+        }
+        
+        .message {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .success {
+            background: #e6f4ea;
+            color: #137333;
+            border: 1px solid #a8dab5;
+        }
+        
+        .error {
+            background: #fce8e6;
+            color: #c5221f;
+            border: 1px solid #f5b4ab;
+        }
+        
+        .info {
+            background: #e8f0fe;
+            color: #1967d2;
+            border: 1px solid #aecbfa;
+        }
+        
+        .otp-display {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            text-align: center;
+            font-family: monospace;
+            font-size: 18px;
+            letter-spacing: 5px;
+            border: 1px dashed #dadce0;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #5f6368;
+            font-size: 14px;
+            border-top: 1px solid #eee;
         }
         
         @keyframes fadeIn {
@@ -16,188 +192,198 @@
             to { opacity: 1; transform: translateY(0); }
         }
         
-        .success-checkmark {
-            width: 80px;
-            height: 80px;
-            margin: 0 auto;
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #4285f4;
             border-radius: 50%;
-            display: block;
-            stroke-width: 2;
-            stroke: #4bb71b;
-            stroke-miterlimit: 10;
-            box-shadow: inset 0px 0px 0px #4bb71b;
-            animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 10px;
         }
         
-        .checkmark-circle {
-            stroke-dasharray: 166;
-            stroke-dashoffset: 166;
-            stroke-width: 2;
-            stroke-miterlimit: 10;
-            stroke: #4bb71b;
-            fill: none;
-            animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
-        }
-        
-        .checkmark-check {
-            transform-origin: 50% 50%;
-            stroke-dasharray: 48;
-            stroke-dashoffset: 48;
-            animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
-        }
-        
-        @keyframes stroke {
-            100% { stroke-dashoffset: 0; }
-        }
-        
-        @keyframes scale {
-            0%, 100% { transform: none; }
-            50% { transform: scale3d(1.1, 1.1, 1); }
-        }
-        
-        @keyframes fill {
-            100% { box-shadow: inset 0px 0px 0px 30px #4bb71b; }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
-<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen flex items-center justify-center p-4">
-    <div class="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden">
-        <!-- Header -->
-        <div class="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 text-white text-center">
-            <h1 class="text-2xl font-bold">OTP Verification</h1>
-            <p class="text-blue-100 mt-2">Secure your account with one-time password</p>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="white">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.18 5 4.05 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+                </svg>
+                Gmail OTP লগইন
+            </h1>
+            <p>আপনার জিমেইলে পাঠানো OTP কোড দিয়ে লগইন করুন</p>
         </div>
         
-        <!-- Main Content -->
-        <div class="p-6">
+        <div class="form-container">
             <!-- Step 1: Email Input -->
-            <div id="step1" class="fade-in">
-                <div class="text-center mb-6">
-                    <i class="fas fa-envelope text-4xl text-blue-500 mb-4"></i>
-                    <h2 class="text-xl font-semibold text-gray-800">Enter Your Email</h2>
-                    <p class="text-gray-600 mt-2">We'll send a verification code to your email</p>
+            <div id="step1" class="step active">
+                <div class="input-group">
+                    <label for="email">আপনার জিমেইল ঠিকানা</label>
+                    <input type="email" id="email" placeholder="example@gmail.com">
                 </div>
-                
-                <form id="emailForm">
-                    <div class="mb-4">
-                        <label for="email" class="block text-gray-700 text-sm font-medium mb-2">Email Address</label>
-                        <div class="relative">
-                            <input 
-                                type="email" 
-                                id="email" 
-                                name="email"
-                                required
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-                                placeholder="your@email.com"
-                            >
-                            <i class="fas fa-envelope absolute right-3 top-3.5 text-gray-400"></i>
-                        </div>
-                    </div>
-                    
-                    <button 
-                        type="submit"
-                        id="sendOtpBtn"
-                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition duration-300 flex items-center justify-center"
-                    >
-                        <span id="sendOtpText">Send OTP</span>
-                        <i id="sendOtpSpinner" class="fas fa-spinner fa-spin ml-2 hidden"></i>
-                    </button>
-                </form>
+                <button class="btn" onclick="sendOTP()">
+                    <span class="btn-text">OTP পাঠান</span>
+                </button>
             </div>
             
             <!-- Step 2: OTP Verification -->
-            <div id="step2" class="hidden fade-in">
-                <div class="text-center mb-6">
-                    <i class="fas fa-shield-alt text-4xl text-blue-500 mb-4"></i>
-                    <h2 class="text-xl font-semibold text-gray-800">Enter Verification Code</h2>
-                    <p class="text-gray-600 mt-2">We've sent a 6-digit code to <span id="userEmail" class="font-medium"></span></p>
+            <div id="step2" class="step">
+                <div class="message info">
+                    OTP কোডটি আপনার ইমেইলে পাঠানো হয়েছে
+                </div>
+                <div class="input-group">
+                    <label for="otp">6-অঙ্কের OTP কোড</label>
+                    <input type="text" id="otp" placeholder="123456" maxlength="6">
+                </div>
+                <button class="btn" onclick="verifyOTP()">
+                    <span class="btn-text">যাচাই করুন</span>
+                </button>
+                <div class="resend">
+                    <a href="#" onclick="resendOTP()">OTP আবার পাঠান</a>
                 </div>
                 
-                <form id="otpForm">
-                    <div class="mb-4">
-                        <label for="otp" class="block text-gray-700 text-sm font-medium mb-2">Verification Code</label>
-                        <div class="relative">
-                            <input 
-                                type="text" 
-                                id="otp" 
-                                name="otp"
-                                maxlength="6"
-                                required
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-center text-xl tracking-widest"
-                                placeholder="000000"
-                            >
-                            <i class="fas fa-key absolute right-3 top-3.5 text-gray-400"></i>
-                        </div>
-                        <p class="text-sm text-gray-500 mt-2">Enter the 6-digit code sent to your email</p>
-                    </div>
-                    
-                    <div class="flex space-x-3">
-                        <button 
-                            type="button"
-                            id="backBtn"
-                            class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-3 px-4 rounded-lg transition duration-300"
-                        >
-                            Back
-                        </button>
-                        <button 
-                            type="submit"
-                            id="verifyOtpBtn"
-                            class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition duration-300 flex items-center justify-center"
-                        >
-                            <span id="verifyOtpText">Verify OTP</span>
-                            <i id="verifyOtpSpinner" class="fas fa-spinner fa-spin ml-2 hidden"></i>
-                        </button>
-                    </div>
-                    
-                    <div class="text-center mt-4">
-                        <button 
-                            type="button"
-                            id="resendOtpBtn"
-                            class="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                        >
-                            Didn't receive code? Resend
-                        </button>
-                        <p id="resendTimer" class="text-sm text-gray-500 mt-1 hidden">Resend available in <span id="countdown">60</span> seconds</p>
-                    </div>
-                </form>
-            </div>
-            
-            <!-- Step 3: Success Message -->
-            <div id="step3" class="hidden fade-in">
-                <div class="text-center py-6">
-                    <svg class="success-checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
-                        <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
-                        <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
-                    </svg>
-                    <h2 class="text-2xl font-bold text-gray-800 mt-4">Verification Successful!</h2>
-                    <p class="text-gray-600 mt-2">Your email has been verified successfully.</p>
-                    
-                    <button 
-                        id="resetBtn"
-                        class="mt-6 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition duration-300"
-                    >
-                        Verify Another Email
-                    </button>
+                <!-- Demo OTP Display -->
+                <div class="otp-display">
+                    ডেমো OTP: <span id="demo-otp">000000</span>
                 </div>
             </div>
             
-            <!-- Alert Messages -->
-            <div id="alert" class="mt-4 hidden">
-                <div class="p-4 rounded-lg" id="alertContent">
-                    <div class="flex items-center">
-                        <i id="alertIcon" class="fas fa-info-circle mr-3"></i>
-                        <span id="alertMessage"></span>
-                    </div>
+            <!-- Step 3: Success -->
+            <div id="step3" class="step">
+                <div class="message success">
+                    ✅ সফলভাবে লগইন হয়েছে!
                 </div>
+                <button class="btn btn-secondary" onclick="resetForm()">
+                    <span class="btn-text">আবার লগইন করুন</span>
+                </button>
             </div>
+            
+            <div id="message" class="message"></div>
         </div>
         
-        <!-- Footer -->
-        <div class="bg-gray-50 p-4 text-center text-gray-500 text-sm">
-            <p>Secure OTP Verification System</p>
+        <div class="footer">
+            Gmail OTP লগইন সিস্টেম | নিরাপদ লগইন
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script>
+        let generatedOTP = "";
+        let userEmail = "";
+        
+        // OTP পাঠানোর ফাংশন
+        function sendOTP() {
+            const email = document.getElementById('email').value;
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            
+            // ইমেইল ভ্যালিডেশন
+            if(!email) {
+                showMessage('দয়া করে আপনার জিমেইল ঠিকানা লিখুন', 'error');
+                return;
+            }
+            
+            if(!emailRegex.test(email)) {
+                showMessage('দয়া করে একটি বৈধ ইমেইল ঠিকানা লিখুন', 'error');
+                return;
+            }
+            
+            userEmail = email;
+            
+            // 6-digit OTP জেনারেট করা
+            generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
+            document.getElementById('demo-otp').textContent = generatedOTP;
+            
+            // লোডিং স্টেট দেখানো
+            const btn = document.querySelector('#step1 .btn');
+            const btnText = btn.querySelector('.btn-text');
+            btnText.textContent = 'OTP পাঠানো হচ্ছে...';
+            btn.disabled = true;
+            
+            // সিমুলেট করা যে OTP পাঠানো হচ্ছে
+            setTimeout(() => {
+                // স্টেপ পরিবর্তন
+                document.getElementById('step1').classList.remove('active');
+                document.getElementById('step2').classList.add('active');
+                
+                showMessage(`OTP কোড ${email} ঠিকানায় পাঠানো হয়েছে`, 'success');
+                
+                // বাটন রিসেট
+                btnText.textContent = 'OTP পাঠান';
+                btn.disabled = false;
+            }, 2000);
+        }
+        
+        // OTP যাচাই করার ফাংশন
+        function verifyOTP() {
+            const enteredOTP = document.getElementById('otp').value;
+            
+            if(!enteredOTP || enteredOTP.length !== 6) {
+                showMessage('দয়া করে ৬-অঙ্কের OTP কোড লিখুন', 'error');
+                return;
+            }
+            
+            if(enteredOTP === generatedOTP) {
+                document.getElementById('step2').classList.remove('active');
+                document.getElementById('step3').classList.add('active');
+                showMessage('', '');
+            } else {
+                showMessage('ভুল OTP কোড, আবার চেষ্টা করুন', 'error');
+            }
+        }
+        
+        // OTP আবার পাঠানোর ফাংশন
+        function resendOTP() {
+            generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
+            document.getElementById('demo-otp').textContent = generatedOTP;
+            
+            showMessage(`নতুন OTP কোড ${userEmail} ঠিকানায় পাঠানো হয়েছে`, 'success');
+        }
+        
+        // ফর্ম রিসেট করার ফাংশন
+        function resetForm() {
+            document.getElementById('step3').classList.remove('active');
+            document.getElementById('step1').classList.add('active');
+            document.getElementById('email').value = '';
+            document.getElementById('otp').value = '';
+            showMessage('', '');
+        }
+        
+        // মেসেজ দেখানোর ফাংশন
+        function showMessage(msg, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = msg;
+            messageDiv.className = 'message';
+            if(type) {
+                messageDiv.classList.add(type);
+            }
+            
+            // অটো হাইড মেসেজ
+            if(msg) {
+                setTimeout(() => {
+                    messageDiv.textContent = '';
+                    messageDiv.className = 'message';
+                }, 5000);
+            }
+        }
+        
+        // এন্টার কী প্রেস করলে OTP পাঠানো বা যাচাই করা
+        document.getElementById('email').addEventListener('keypress', function(e) {
+            if(e.key === 'Enter') {
+                sendOTP();
+            }
+        });
+        
+        document.getElementById('otp').addEventListener('keypress', function(e) {
+            if(e.key === 'Enter') {
+                verifyOTP();
+            }
+        });
+    </script>
 </body>
 </html>
