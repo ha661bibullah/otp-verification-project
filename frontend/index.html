@@ -39,7 +39,7 @@
         return;
       }
 
-     const res = await fetch("https://otp-verification-project.onrender.com/send-otp", {
+     const res = await fetch("https://otp-verification-project.onrender.com", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({ email })
