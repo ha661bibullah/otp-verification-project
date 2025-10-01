@@ -6,9 +6,9 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware - সব domain থেকে request accept করতে
+// Middleware
 app.use(cors({
-  origin: '*',
+  origin: ['https://cerulean-basbousa-feb431.netlify.app', 'http://localhost:3000', 'http://127.0.0.1:5500'],
   credentials: true
 }));
 app.use(express.json());
@@ -18,53 +18,25 @@ const otpStorage = new Map();
 
 // Configure nodemailer transporter
 let transporter;
-
-function initializeTransporter() {
-  try {
-    console.log('Initializing email transporter...');
-    console.log('Email User:', process.env.EMAIL_USER ? 'Set' : 'Not set');
-    console.log('Email Pass:', process.env.EMAIL_PASS ? 'Set' : 'Not set');
-    
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-      console.error('Email credentials missing in environment variables');
-      return;
+try {
+  transporter = nodemailer.createTransporter({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS
     }
-
-    transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-      },
-      debug: true, // debug mode enable
-      logger: true
-    });
-    
-    console.log('Transporter created successfully');
-  } catch (error) {
-    console.error('Failed to create transporter:', error.message);
-  }
-}
-
-// Initialize transporter on startup
-initializeTransporter();
-
-// Verify transporter configuration
-async function verifyTransporter() {
-  if (!transporter) {
-    console.log('Transporter not initialized - checking credentials...');
-    initializeTransporter();
-    return false;
-  }
+  });
   
-  try {
-    await transporter.verify();
-    console.log('Email service is ready to send emails');
-    return true;
-  } catch (error) {
-    console.log('Email service not ready:', error.message);
-    return false;
-  }
+  // Verify transporter configuration
+  transporter.verify(function(error, success) {
+    if (error) {
+      console.log('Transporter error:', error);
+    } else {
+      console.log('Server is ready to send emails');
+    }
+  });
+} catch (error) {
+  console.error('Failed to create transporter:', error);
 }
 
 // Generate random 6-digit OTP
@@ -74,8 +46,6 @@ function generateOTP() {
 
 // Send OTP to email
 app.post('/api/send-otp', async (req, res) => {
-  console.log('📧 Send OTP request received:', req.body);
-  
   try {
     const { email } = req.body;
     
@@ -86,9 +56,6 @@ app.post('/api/send-otp', async (req, res) => {
       });
     }
 
-    // Check if transporter is ready
-    const isTransporterReady = await verifyTransporter();
-    
     // Generate OTP
     const otp = generateOTP();
     
@@ -98,24 +65,11 @@ app.post('/api/send-otp', async (req, res) => {
       expiresAt: Date.now() + 10 * 60 * 1000 // 10 minutes
     });
 
-    console.log(`✅ OTP ${otp} generated for ${email}`);
-    console.log(`📊 Current OTP storage size: ${otpStorage.size}`);
-
-    if (!isTransporterReady) {
-      console.log('📨 Email service not available, but OTP generated:', otp);
-      return res.json({
-        success: true,
-        message: 'OTP generated successfully (email service temporarily unavailable)',
-        debug_otp: otp // Development only - remove in production
-      });
-    }
+    console.log(`OTP ${otp} generated for ${email}`);
 
     // Email options
     const mailOptions = {
-      from: {
-        name: 'OTP Verification System',
-        address: process.env.EMAIL_USER
-      },
+      from: process.env.EMAIL_USER,
       to: email,
       subject: 'Your OTP Verification Code',
       html: `
@@ -136,7 +90,7 @@ app.post('/api/send-otp', async (req, res) => {
     // Send email
     await transporter.sendMail(mailOptions);
     
-    console.log(`✅ OTP sent successfully to ${email}`);
+    console.log(`OTP sent successfully to ${email}`);
     
     res.json({
       success: true,
@@ -144,19 +98,16 @@ app.post('/api/send-otp', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('❌ Error sending OTP:', error);
+    console.error('Error sending OTP:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to send OTP. Please try again.',
-      error: error.message
+      message: 'Failed to send OTP. Please try again.'
     });
   }
 });
 
 // Verify OTP
 app.post('/api/verify-otp', (req, res) => {
-  console.log('🔍 Verify OTP request received:', req.body);
-  
   try {
     const { email, otp } = req.body;
     
@@ -171,7 +122,6 @@ app.post('/api/verify-otp', (req, res) => {
     const storedData = otpStorage.get(email);
     
     if (!storedData) {
-      console.log(`❌ OTP not found for email: ${email}`);
       return res.status(400).json({
         success: false,
         message: 'OTP not found or expired. Please request a new OTP.'
@@ -180,17 +130,13 @@ app.post('/api/verify-otp', (req, res) => {
 
     if (Date.now() > storedData.expiresAt) {
       otpStorage.delete(email);
-      console.log(`❌ OTP expired for email: ${email}`);
       return res.status(400).json({
         success: false,
         message: 'OTP has expired. Please request a new OTP.'
       });
     }
 
-    console.log(`🔍 Comparing: Input OTP: ${otp}, Stored OTP: ${storedData.otp}`);
-
     if (storedData.otp !== otp) {
-      console.log(`❌ Invalid OTP for email: ${email}`);
       return res.status(400).json({
         success: false,
         message: 'Invalid OTP. Please try again.'
@@ -200,7 +146,7 @@ app.post('/api/verify-otp', (req, res) => {
     // OTP is valid - remove it from storage
     otpStorage.delete(email);
     
-    console.log(`✅ OTP verified successfully for ${email}`);
+    console.log(`OTP verified successfully for ${email}`);
     
     res.json({
       success: true,
@@ -208,7 +154,7 @@ app.post('/api/verify-otp', (req, res) => {
     });
     
   } catch (error) {
-    console.error('❌ Error verifying OTP:', error);
+    console.error('Error verifying OTP:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to verify OTP. Please try again.'
@@ -229,26 +175,19 @@ setInterval(() => {
   }
   
   if (cleanedCount > 0) {
-    console.log(`🧹 Cleaned up ${cleanedCount} expired OTPs`);
+    console.log(`Cleaned up ${cleanedCount} expired OTPs`);
   }
 }, 30 * 60 * 1000);
 
-// Health check endpoint with detailed status
-app.get('/health', async (req, res) => {
-  const emailStatus = await verifyTransporter();
-  
+// Health check endpoint
+app.get('/health', (req, res) => {
   res.status(200).json({ 
     status: 'OK', 
     timestamp: new Date().toISOString(),
-    otpCount: otpStorage.size,
-    emailService: emailStatus ? 'Operational' : 'Not Working',
-    environment: process.env.NODE_ENV || 'development',
-    memoryUsage: process.memoryUsage(),
-    uptime: process.uptime()
+    otpCount: otpStorage.size
   });
 });
 
-// Root endpoint
 app.get('/', (req, res) => {
   res.json({ 
     message: 'OTP Verification Backend is running!',
@@ -257,36 +196,22 @@ app.get('/', (req, res) => {
       sendOTP: 'POST /api/send-otp',
       verifyOTP: 'POST /api/verify-otp',
       health: 'GET /health'
-    },
-    status: 'active'
-  });
-});
-
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({
-    success: false,
-    message: 'Route not found',
-    requestedUrl: req.originalUrl
+    }
   });
 });
 
 // Error handling middleware
 app.use((error, req, res, next) => {
-  console.error('💥 Unhandled error:', error);
+  console.error('Unhandled error:', error);
   res.status(500).json({
     success: false,
-    message: 'Internal server error',
-    error: error.message
+    message: 'Internal server error'
   });
 });
 
 // Start server
 app.listen(PORT, '0.0.0.0', () => {
-  console.log('🚀 Server starting...');
-  console.log(`📍 Port: ${PORT}`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`📧 Email user: ${process.env.EMAIL_USER ? 'Set' : 'Not set'}`);
-  console.log(`🔧 Health check: http://localhost:${PORT}/health`);
-  console.log('✅ Server is running successfully!');
+  console.log(`Server is running on port ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`Email user: ${process.env.EMAIL_USER ? 'Set' : 'Not set'}`);
 });
