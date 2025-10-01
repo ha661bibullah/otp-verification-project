@@ -30,7 +30,7 @@
   </div>
 
   <script>
-    const backendURL = "https://otp-verification-project.onrender.com"; // 🔹 Render এর Backend URL বসান
+    let serverOtp = null;
 
     async function sendOtp() {
       const email = document.getElementById("email").value;
@@ -39,28 +39,28 @@
         return;
       }
 
-      const res = await fetch(`${backendURL}/send-otp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email })
-      });
+     const res = await fetch("https://otp-verification-project.onrender.com/send-otp", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ email })
+});
 
       const data = await res.json();
-      document.getElementById("message").innerText = data.message;
+      if (data.success) {
+        serverOtp = data.otp; // ডেমোতে সার্ভার থেকে আসা OTP সংরক্ষণ করা
+        document.getElementById("message").innerText = "OTP sent to your email!";
+      } else {
+        document.getElementById("message").innerText = "Failed to send OTP!";
+      }
     }
 
-    async function verifyOtp() {
-      const email = document.getElementById("email").value;
-      const otp = document.getElementById("otp").value;
-
-      const res = await fetch(`${backendURL}/verify-otp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, otp })
-      });
-
-      const data = await res.json();
-      document.getElementById("message").innerText = data.message;
+    function verifyOtp() {
+      const userOtp = document.getElementById("otp").value;
+      if (userOtp == serverOtp) {
+        document.getElementById("message").innerText = "✅ OTP Verified! Login Successful.";
+      } else {
+        document.getElementById("message").innerText = "❌ Invalid OTP!";
+      }
     }
   </script>
 </body>
