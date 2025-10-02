@@ -24,7 +24,7 @@ app.post("/send-otp", async (req, res) => {
         "content-type": "application/json"
       },
       body: JSON.stringify({
-        sender: { email: "ha661bibullah@gmail.com" },
+        sender: { email: "billaharif661@gmail.com" },
         to: [{ email }],
         subject: "Your OTP Code",
         htmlContent: `<p>Your OTP is: <b>${otp}</b></p>`
