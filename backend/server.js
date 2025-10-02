@@ -8,26 +8,26 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-// Dynamic Port (Render assigns automatically)
 const PORT = process.env.PORT || 5000;
 
-// Nodemailer Transporter (Gmail + App Password)
+// Nodemailer Transporter (Brevo SMTP)
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: process.env.SMTP_HOST,
+  port: process.env.SMTP_PORT,
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  },
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS
+  }
 });
 
 // OTP API
 app.post("/send-otp", async (req, res) => {
   const { email } = req.body;
-  const otp = Math.floor(100000 + Math.random() * 900000); // ৬-সংখ্যার OTP
+  const otp = Math.floor(100000 + Math.random() * 900000);
 
   try {
     await transporter.sendMail({
-      from: `"OTP Service" <${process.env.EMAIL_USER}>`,
+      from: `"OTP Service" <${process.env.SMTP_USER}>`,
       to: email,
       subject: "Your OTP Code",
       text: `Your OTP is: ${otp}`,
@@ -38,11 +38,6 @@ app.post("/send-otp", async (req, res) => {
     console.error("❌ Email Error:", err.message);
     res.status(500).json({ success: false, error: "Failed to send OTP" });
   }
-});
-
-// Default Route
-app.get("/", (req, res) => {
-  res.send("✅ OTP Server is running...");
 });
 
 app.listen(PORT, () => {
