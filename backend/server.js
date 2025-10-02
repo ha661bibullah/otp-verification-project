@@ -1,7 +1,8 @@
 const express = require("express");
-const nodemailer = require("nodemailer");
 const bodyParser = require("body-parser");
 const cors = require("cors");
+const fetch = require("node-fetch"); // install করতে হবে
+
 require("dotenv").config();
 
 const app = express();
@@ -10,28 +11,29 @@ app.use(bodyParser.json());
 
 const PORT = process.env.PORT || 5000;
 
-// Nodemailer Transporter (Brevo SMTP)
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: process.env.SMTP_PORT,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS
-  }
-});
-
-// OTP API
 app.post("/send-otp", async (req, res) => {
   const { email } = req.body;
   const otp = Math.floor(100000 + Math.random() * 900000);
 
   try {
-    await transporter.sendMail({
-      from: `"OTP Service" <${process.env.SMTP_USER}>`,
-      to: email,
-      subject: "Your OTP Code",
-      text: `Your OTP is: ${otp}`,
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "accept": "application/json",
+        "api-key": process.env.BREVO_API_KEY,
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        sender: { email: "your_verified_email@domain.com" },
+        to: [{ email }],
+        subject: "Your OTP Code",
+        htmlContent: `<p>Your OTP is: <b>${otp}</b></p>`
+      })
     });
+
+    if (!response.ok) {
+      throw new Error(`Brevo API Error: ${response.statusText}`);
+    }
 
     res.json({ success: true, otp });
   } catch (err) {
