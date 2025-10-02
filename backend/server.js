@@ -14,10 +14,11 @@ const PORT = process.env.PORT || 5000;
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
-    user: process.env.EMAIL_USER, // আপনার Gmail
-    pass: process.env.EMAIL_PASS  // App Password
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS, // Gmail App Password (16-digit)
   },
 });
+
 
 // OTP API
 app.post("/send-otp", async (req, res) => {
